@@ -16,7 +16,7 @@ public class ChannelsLogger extends Plugin implements Listener {
 
 	private FileConfiguration config;
 
-    private Logger logger = Logger.getLogger("chat");
+    private Logger logger = Logger.getLogger("ChannelsLogger");
 
 	private boolean enabled = false;
 	private boolean logPrivate = false;
