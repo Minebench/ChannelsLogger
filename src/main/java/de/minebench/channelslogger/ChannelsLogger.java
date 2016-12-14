@@ -41,7 +41,7 @@ public class ChannelsLogger extends Plugin implements Listener {
 
         if (event.getMessage() instanceof ChannelMessage){
             ChannelMessage cm = (ChannelMessage) event.getMessage();
-            logger.info("[" + cm.getChannel().getTag() + "] " + cm.getChatter().getName() + ": " + cm.getRawMessage());
+            logger.info("[" + cm.getChannel().getTag() + "] " + cm.getChatter().getPrefix() + cm.getChatter().getName() + ": " + cm.getRawMessage());
         } else if (event.getMessage() instanceof PrivateMessage) {
             if (logPrivate) {
                 PrivateMessage pm = (PrivateMessage) event.getMessage();
