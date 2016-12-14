@@ -1,0 +1,5 @@
+name: ${project.name}
+main: de.minebench.channelslogger.ChannelsLogger
+version: '${minecraft.plugin.version}'
+author: Phoenix616
+depends: [ Channels ]
