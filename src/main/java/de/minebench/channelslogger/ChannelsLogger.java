@@ -21,8 +21,9 @@ public class ChannelsLogger extends Plugin implements Listener {
 
 	private boolean enabled = false;
 	private boolean logPrivate = false;
+    private boolean logPrefixes = false;
 
-	public void onEnable() {
+    public void onEnable() {
 		try {
 			config = new FileConfiguration(this, "config.yml");
 			enabled = true;
@@ -30,6 +31,7 @@ public class ChannelsLogger extends Plugin implements Listener {
 			e.printStackTrace();
 		}
 		logPrivate = config.getBoolean("logPrivate");
+        logPrefixes = config.getBoolean("logPrefixes");
         DOMConfigurator.configure(getClass().getResource("/logger.xml"));
 
 		getProxy().getPluginManager().registerListener(this, this);
@@ -42,7 +44,7 @@ public class ChannelsLogger extends Plugin implements Listener {
 
         if (event.getMessage() instanceof ChannelMessage){
             ChannelMessage cm = (ChannelMessage) event.getMessage();
-            logger.info("[" + cm.getChannel().getTag() + "] " + ChatColor.stripColor(cm.getChatter().getPrefix()) + cm.getChatter().getName() + ": " + cm.getRawMessage());
+            logger.info("[" + cm.getChannel().getTag() + "] " + (logPrefixes ? ChatColor.stripColor(cm.getChatter().getPrefix()) : "") + cm.getChatter().getName() + ": " + cm.getRawMessage());
         } else if (event.getMessage() instanceof PrivateMessage) {
             if (logPrivate) {
                 PrivateMessage pm = (PrivateMessage) event.getMessage();
