@@ -2,6 +2,7 @@ package de.minebench.channelslogger;
 
 import java.io.IOException;
 
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
@@ -41,7 +42,7 @@ public class ChannelsLogger extends Plugin implements Listener {
 
         if (event.getMessage() instanceof ChannelMessage){
             ChannelMessage cm = (ChannelMessage) event.getMessage();
-            logger.info("[" + cm.getChannel().getTag() + "] " + cm.getChatter().getPrefix() + cm.getChatter().getName() + ": " + cm.getRawMessage());
+            logger.info("[" + cm.getChannel().getTag() + "] " + ChatColor.stripColor(cm.getChatter().getPrefix()) + cm.getChatter().getName() + ": " + cm.getRawMessage());
         } else if (event.getMessage() instanceof PrivateMessage) {
             if (logPrivate) {
                 PrivateMessage pm = (PrivateMessage) event.getMessage();
