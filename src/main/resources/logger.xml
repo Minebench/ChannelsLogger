@@ -6,7 +6,7 @@
         <param name="file" value="plugins/${project.name}/logs/chat.log"/>
         <param name="DatePattern" value="'.'yyyy-MM-dd"/>
         <param name="BufferSize" value="500"/>
-        <layout class="org.apache.log4j.PatternLayout">
+        <layout class="de.minebench.channelslogger.lib.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{dd.MM.yyyy HH:mm:ss} %m%n"/>
         </layout>
     </appender>
