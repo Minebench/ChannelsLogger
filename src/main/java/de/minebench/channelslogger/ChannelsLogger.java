@@ -6,38 +6,37 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
-import net.zaiyers.Channels.ChannelsChatEvent;
+import net.zaiyers.Channels.events.ChannelsChatEvent;
 import net.zaiyers.Channels.message.ChannelMessage;
 import net.zaiyers.Channels.message.ConsoleMessage;
 import net.zaiyers.Channels.message.PrivateMessage;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ChannelsLogger extends Plugin implements Listener {
 
-	private FileConfiguration config;
+    private FileConfiguration config;
 
-    private Logger logger = Logger.getLogger("ChannelsLogger");
+    private Logger logger = LogManager.getLogger("ChannelsLogger.ChatLogger");
 
-	private boolean enabled = false;
-	private boolean logPrivate = false;
+    private boolean enabled = false;
+    private boolean logPrivate = false;
     private boolean logPrefixes = false;
 
     public void onEnable() {
-		try {
-			config = new FileConfiguration(this, "config.yml");
-			enabled = true;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		logPrivate = config.getBoolean("logPrivate");
+        try {
+            config = new FileConfiguration(this, "config.yml");
+            enabled = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        logPrivate = config.getBoolean("logPrivate");
         logPrefixes = config.getBoolean("logPrefixes");
-        DOMConfigurator.configure(getClass().getResource("/logger.xml"));
 
-		getProxy().getPluginManager().registerListener(this, this);
-	}
+        getProxy().getPluginManager().registerListener(this, this);
+    }
 
-	@EventHandler
+    @EventHandler
     public void onChannelsMessage(ChannelsChatEvent event) {
         if (!enabled)
             return;
