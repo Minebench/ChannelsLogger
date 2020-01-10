@@ -6,18 +6,18 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
-import net.zaiyers.Channels.events.ChannelsChatEvent;
+import net.zaiyers.Channels.ChannelsChatEvent;
 import net.zaiyers.Channels.message.ChannelMessage;
 import net.zaiyers.Channels.message.ConsoleMessage;
 import net.zaiyers.Channels.message.PrivateMessage;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 
 public class ChannelsLogger extends Plugin implements Listener {
 
     private FileConfiguration config;
 
-    private Logger logger = LogManager.getLogger("ChannelsLogger.ChatLogger");
+    private Logger logger = LoggerContext.getContext().getLogger("ChannelsLogger.ChatLogger");
 
     private boolean enabled = false;
     private boolean logPrivate = false;

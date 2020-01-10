@@ -3,7 +3,7 @@
     <Appenders>
         <RollingFile name="channelsLogger"
                      fileName="plugins/${project.name}/logs/chat.log"
-                     datePattern="'.'yyyy-MM-dd">
+                     filePattern="plugins/${project.name}/logs/chat.log.%d{yyyy-MM-dd}">
             <PatternLayout pattern="%d{dd.MM.yyyy HH:mm:ss} %m%n" />
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1"/>
@@ -12,10 +12,9 @@
     </Appenders>
 
     <Loggers>
-        <logger name="ChannelsLogger.ChatLogger">
-            <level value="INFO"/>
+        <Logger name="ChannelsLogger.ChatLogger" level="info">
             <AppenderRef ref="channelsLogger"/>
-        </logger>
+        </Logger>
     </Loggers>
 
 </Configuration>
