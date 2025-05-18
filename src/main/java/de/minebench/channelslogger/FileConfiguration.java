@@ -1,160 +1,236 @@
 package de.minebench.channelslogger;
 
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
-
 /*
- * Copyright 2016 Max Lee (https://github.com/Phoenix616/)
+ * Copyright (C) 2025 Max Lee aka Phoenix616 (max@themoep.de)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the Mozilla Public License as published by
- * the Mozilla Foundation, version 2.
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * Mozilla Public License v2.0 for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the Mozilla Public License v2.0
- * along with this program. If not, see <http://mozilla.org/MPL/2.0/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.slf4j.event.Level;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.yaml.NodeStyle;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 public class FileConfiguration {
-    protected final static ConfigurationProvider yml = ConfigurationProvider.getProvider(YamlConfiguration.class);
 
-    private Plugin plugin;
+    private static final Pattern PATH_PATTERN = Pattern.compile("\\.");
 
-    private Configuration defaults;
-    private Configuration config;
-    private File configFile;
+    private final ChannelsLogger plugin;
+    private final Path configFile;
+    private final String defaultFile;
+    private final YamlConfigurationLoader configLoader;
+    private ConfigurationNode config;
+    private ConfigurationNode defaultConfig;
 
-    /**
-     * FileConfiguration represents a configuration saved in a yml file
-     * @param plugin The bungee plugin of the config
-     * @param path The path to the yml file with the plugin's datafolder as the parent
-     * @throws IOException
-     */
-    public FileConfiguration(Plugin plugin, String path) throws IOException {
-        this(plugin, new File(plugin.getDataFolder(), path));
+    public FileConfiguration(ChannelsLogger plugin, Path configFile) {
+        this(plugin, configFile, configFile.getFileName().toString());
     }
 
-    /**
-     * FileConfiguration represents a configuration saved in a yml file
-     * @param plugin The bungee plugin of the config
-     * @param configFile The yml file
-     * @throws IOException
-     */
-    public FileConfiguration(Plugin plugin, File configFile) throws IOException {
+    public FileConfiguration(ChannelsLogger plugin, Path configFile, String defaultFile) {
         this.plugin = plugin;
-        loadConfig(configFile);
-    }
-
-    /**
-     * Load a file into this config
-     * @param configFile The yml file
-     * @return <tt>true</tt> if it was successfully loaded, <tt>false</tt> if not
-     */
-    public boolean loadConfig(File configFile) throws IOException {
         this.configFile = configFile;
-        defaults = yml.load(new InputStreamReader(plugin.getResourceAsStream(configFile.getName())));
-
-        if(configFile.exists()) {
-            config = yml.load(configFile);
-            return true;
-        } else if(configFile.getParentFile().exists() || configFile.getParentFile().mkdirs()) {
-            return createDefaultConfig();
-        }
-        return false;
+        this.defaultFile = defaultFile;
+        configLoader = YamlConfigurationLoader.builder()
+                .indent(2)
+                .path(configFile)
+                .nodeStyle(NodeStyle.BLOCK)
+                .build();
     }
 
-    /**
-     * Saves the config into the yml file on the disc
-     * @return <tt>true</tt> if it was saved; <tt>false</tt> if an error occurred
-     */
-    public boolean saveConfig() {
+    public boolean load() {
         try {
-            yml.save(config, configFile);
+            config = configLoader.load();
+            if (defaultFile != null) {
+                try (InputStream defaultConfigStream = plugin.getClass().getClassLoader().getResourceAsStream(defaultFile)) {
+                    if (defaultConfigStream != null) {
+                        defaultConfig = YamlConfigurationLoader.builder()
+                                .indent(2)
+                                .source(() -> new BufferedReader(new InputStreamReader(defaultConfigStream)))
+                                .build().load();
+                        if (config.empty()) {
+                            config = defaultConfig.copy();
+                        }
+                    }
+                }
+            }
+            plugin.log(Level.INFO, "Loaded " + configFile.getFileName());
+            return true;
         } catch (IOException e) {
-            plugin.getLogger().severe("Could not save configuration to " + configFile.getAbsolutePath());
-            e.printStackTrace();
+            plugin.log(Level.ERROR, "Unable to load configuration file " + configFile.getFileName(), e);
             return false;
         }
-        return true;
     }
 
-    /**
-     * Copy the default config from the plugin jar into its path
-     * @return <tt>true</tt> if it was successfully created, <tt>false</tt> if it already existed
-     */
     public boolean createDefaultConfig() throws IOException {
-        if(configFile.createNewFile()) {
-            config = defaults;
-            saveConfig();
-            return true;
+        try (InputStream in = plugin.getClass().getClassLoader().getResourceAsStream(defaultFile)) {
+            if (in == null) {
+                plugin.log(Level.WARN, "No default config '" + defaultFile + "' found in " + plugin.getClass().getSimpleName() + "!");
+                return false;
+            }
+            if (!Files.exists(configFile)) {
+                Path parent = configFile.getParent();
+                if (!Files.exists(parent)) {
+                    Files.createDirectories(parent);
+                }
+                try {
+                    Files.copy(in, configFile);
+                    return true;
+                } catch (IOException ex) {
+                    plugin.log(Level.ERROR, "Could not save " + configFile.getFileName() + " to " + configFile, ex);
+                }
+            }
+        } catch (IOException ex) {
+            plugin.log(Level.ERROR, "Could not load default config from " + defaultFile, ex);
         }
         return false;
     }
 
-    /**
-     * Delete the file of this config from the disc
-     * @return <tt>true</tt> if it was successfully deleted; <tt>false</tt> otherwise
-     */
-    public boolean removeConfig() {
-        return configFile.delete();
+    public void save() {
+        try {
+            configLoader.save(config);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public Configuration getConfiguration() {
+    public Object set(String path, Object value) {
+        ConfigurationNode node = config.node(splitPath(path));
+        Object prev = node.raw();
+        try {
+            node.set(value);
+        } catch (SerializationException e) {
+            throw new RuntimeException(e);
+        }
+        return prev;
+    }
+
+    public ConfigurationNode remove(String path) {
+        ConfigurationNode node = config.node(splitPath(path));
+        try {
+            return node.virtual() ? node : node.set(null);
+        } catch (SerializationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ConfigurationNode getRawConfig() {
         return config;
     }
 
-    public boolean getBoolean(String path) {
-        return config.getBoolean(path);
+    public ConfigurationNode getRawConfig(String path) {
+        return getRawConfig().node(splitPath(path));
     }
 
-    public boolean getBoolean(String path, boolean def) {
-        return config.getBoolean(path, def);
+    public boolean has(String path) {
+        return !getRawConfig(path).virtual();
+    }
+
+    public boolean isSection(String path) {
+        return !getRawConfig(path).childrenMap().isEmpty();
+    }
+
+    public Map<String, Object> getSection(String key) {
+        return getConfigMap(getRawConfig(key));
     }
 
     public int getInt(String path) {
-        return config.getInt(path);
+        return getInt(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getInt() : 0);
     }
 
     public int getInt(String path, int def) {
-        return config.getInt(path, def);
+        return getRawConfig(path).getInt(def);
+    }
+
+    public double getDouble(String path) {
+        return getDouble(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getDouble() : 0);
+    }
+
+    public double getDouble(String path, double def) {
+        return getRawConfig(path).getDouble(def);
     }
 
     public String getString(String path) {
-        return config.getString(path);
+        return getString(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getString() : null);
     }
 
     public String getString(String path, String def) {
-        return config.getString(path, def);
+        ConfigurationNode node = getRawConfig(path);
+        if (def != null) {
+            return node.getString(def);
+        }
+        return node.getString();
     }
 
-    public List<String> getStringList(String path) {
-        return config.getStringList(path);
+    public boolean getBoolean(String path) {
+        return getBoolean(path, defaultConfig != null && defaultConfig.node(splitPath(path)).getBoolean());
     }
 
-    public Configuration getSection(String path) {
-        return config.getSection(path);
+    public boolean getBoolean(String path, boolean def) {
+        return getRawConfig(path).getBoolean(def);
     }
 
-    public Configuration getDefaults() {
-        return defaults;
+    private static Object[] splitPath(String key) {
+        return PATH_PATTERN.split(key);
     }
 
-    public boolean isSet(String path) {
-        return config.get(path) != null;
+    public static Map<String, Object> getConfigMap(Object configuration) {
+        if (configuration instanceof Map) {
+            return getValues((Map<?, ?>) configuration);
+        } else if (configuration instanceof ConfigurationNode) {
+            return getValues((ConfigurationNode) configuration);
+        }
+        return null;
     }
 
-    public void set(String path, Object value) {
-        config.set(path, value);
+    private static Map<String, Object> getValues(ConfigurationNode config) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Map.Entry<Object, ? extends ConfigurationNode> entry : config.childrenMap().entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            ConfigurationNode value = entry.getValue();
+            if (value.isMap()) {
+                map.put(key, getValues(value));
+            } else {
+                map.put(key, value.raw());
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, Object> getValues(Map<?, ?> map) {
+        Map<String, Object> returnMap = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            if (entry.getValue() instanceof Map) {
+                returnMap.put(key, getValues((Map<?, ?>) entry.getValue()));
+            } else if (entry.getValue() instanceof ConfigurationNode) {
+                returnMap.put(key, getValues((ConfigurationNode) entry.getValue()));
+            } else {
+                returnMap.put(key, entry.getValue());
+            }
+        }
+        return returnMap;
     }
 }

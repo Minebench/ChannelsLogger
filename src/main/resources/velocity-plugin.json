@@ -1,0 +1,13 @@
+{
+  "id": "channelslogger",
+  "name": "ChannelsLogger",
+  "version": "${minecraft.plugin.version}",
+  "main": "de.minebench.channelslogger.ChannelsLogger",
+  "authors": ["Phoenix616"],
+  "dependencies": [
+    {
+      "id": "channels",
+      "optional": false
+    }
+  ]
+}
